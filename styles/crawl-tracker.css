@@ -10,10 +10,19 @@
     gap: 10px;
 }
 
-form {
+/* Ensure the internal window content fills the resized window and allows flex growth */
+.shadowdark-crawl-app .window-content {
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    /* Grow to fill window-content */
     overflow: hidden;
     /* Prevent form scroll bars */
 }

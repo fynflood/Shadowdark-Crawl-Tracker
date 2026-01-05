@@ -16,6 +16,7 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     tag: "form",
     id: "shadowdark-crawl-tracker",
+    classes: ["shadowdark-crawl-app"],
     window: {
       title: "Crawl Initiative",
       resizable: true,
