@@ -132,10 +132,9 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!game.user.isGM) return;
     this._participants = [this._generateGMParticipant()];
     this._activeIndex = 0;
-    // Forcing a re-prepare by not saving immediately, 
-    // it will re-populate in the next render cycle of _prepareContext
-    this.render();
+    // Save state FIRST so that when render calls _loadState, it gets the reset version
     await this._saveState();
+    this.render();
   }
 
   async _onMoveUp(event, target) {
