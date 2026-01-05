@@ -266,6 +266,8 @@ Hooks.on("updateActor", (actor, changes, options, userId) => {
 });
 
 Hooks.on("getSceneControlButtons", (controls) => {
+  if (!game.user.isGM) return;
+
   // Add a new primary category for Crawl Tracking
   const crawlControl = {
     name: "shadowdark-crawl",

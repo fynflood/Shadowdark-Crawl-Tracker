@@ -10,21 +10,40 @@
     gap: 10px;
 }
 
-/* Ensure the internal window content fills the resized window and allows flex growth */
+/*
+ * 1. Force the application window container to use flexbox
+ *    so strict height handling passes down to children.
+ */
+.shadowdark-crawl-app {
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+ * 2. Force the content wrapper to fill available space
+ *    and behave as a flex container for the form.
+ */
 .shadowdark-crawl-app .window-content {
+    flex: 1;
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding: 0;
+    /* Remove default padding that might break calc */
+    color: #dedede;
+    font-family: "Signika", sans-serif;
 }
 
+/*
+ * 3. The form matches the content height and creates the
+ *    main vertical layout flow.
+ */
 form {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    flex: 1;
-    /* Grow to fill window-content */
     overflow: hidden;
-    /* Prevent form scroll bars */
 }
 
 .participant-list {
