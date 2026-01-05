@@ -1,0 +1,36 @@
+{
+    "id": "shadowdark-crawl-tracker",
+    "title": "Shadowdark Crawl Initiative Tracker",
+    "description": "A turn-taking tracker specifically for Shadowdark crawl turns, separate from standard combat.",
+    "version": "1.1.0",
+    "authors": [
+        {
+            "name": "Fynflood",
+            "discord": "",
+            "url": "https://github.com/fynflood"
+        }
+    ],
+    "compatibility": {
+        "minimum": "13",
+        "verified": "13"
+    },
+    "relationships": {
+        "systems": [
+            {
+                "id": "shadowdark",
+                "compatibility": {
+                    "minimum": "0.10.0"
+                }
+            }
+        ]
+    },
+    "esmodules": [
+        "scripts/crawl-tracker.mjs"
+    ],
+    "styles": [
+        "styles/crawl-tracker.css"
+    ],
+    "url": "https://github.com/fynflood/Shadowdark-Crawl-Tracker",
+    "manifest": "https://github.com/fynflood/Shadowdark-Crawl-Tracker/releases/latest/download/module.json",
+    "download": "https://github.com/fynflood/Shadowdark-Crawl-Tracker/releases/latest/download/module.zip"
+}

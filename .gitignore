@@ -1,0 +1,13 @@
+# System files
+Thumbs.db
+.DS_Store
+
+# Node modules
+node_modules/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Foundry specific
+*.log
