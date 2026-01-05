@@ -1,6 +1,6 @@
 # Shadowdark Crawl Initiative Tracker
 
-![Crawl Tracker UI](readme-assets/turn-tracker-ui.png)
+<img src="readme-assets/turn-tracker-ui.png" align="right" width="50%"/>
 
 A dedicated turn-tracking module for **Shadowdark RPG** in Foundry VTT. This module helps Game Masters manage "Crawl Mode" turns, ensuring orderly exploration and movement.
 
@@ -23,8 +23,7 @@ A dedicated turn-tracking module for **Shadowdark RPG** in Foundry VTT. This mod
 
 1.  **Open the Tracker**:
     -   Navigate to the **Token Controls** (left sidebar, token icon).
-    -   Click the **Crawl Tracking** tool (shoe prints icon).
-    -   Click the **Toggle Crawl Tracker** button.
+    -   Click the **Toggle Crawl Tracker** button (shoe prints icon).
 
 2.  **Managing Turns (GM Only)**:
     -   **Next Turn**: Click the "Next Turn" button at the bottom to advance initiative.

@@ -1,11 +1,10 @@
 /**
  * Shadowdark Crawl Initiative Tracker
- * A non-combat turn-taking application for Shadowdark RPG.
+ * 
+ * A simple module to track turns during the crawler phase.
  */
 
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-
-export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
+class CrawlTracker extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
   constructor(options = {}) {
     super(options);
     this._participants = [];
@@ -37,12 +36,11 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static PARTS = {
-    tracker: {
+    form: {
       template: "modules/shadowdark-crawl-tracker/templates/crawl-tracker.hbs"
     }
   };
 
-  /** @override */
   async _prepareContext(_options) {
     await this._loadState();
 
@@ -57,11 +55,11 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
       return (t === "player" || t === "character" || a.hasPlayerOwner) && a.name;
     });
 
-    console.log(`Shadowdark Crawl Tracker | Searching for players... Found ${playerActors.length} candidates.`);
+    // console.log(`Shadowdark Crawl Tracker | Searching for players... Found ${playerActors.length} candidates.`);
 
     for (const actor of playerActors) {
       if (!this._participants.some(p => p.actorId === actor.id)) {
-        console.log(`Shadowdark Crawl Tracker | Adding player: ${actor.name}`);
+        // console.log(`Shadowdark Crawl Tracker | Adding player: ${actor.name}`);
         this._participants.push({
           id: foundry.utils.randomID(),
           name: actor.name,
@@ -76,7 +74,7 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
     this._participants = this._participants.filter(p => {
       if (p.isGM) return true;
       const exists = game.actors.has(p.actorId);
-      if (!exists) console.log(`Shadowdark Crawl Tracker | Removing missing actor: ${p.name}`);
+      // if (!exists) console.log(`Shadowdark Crawl Tracker | Removing missing actor: ${p.name}`);
       return exists;
     });
 
@@ -88,13 +86,61 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  _onRender(context, options) {
+    if (!game.user.isGM) return;
+
+    const html = this.element;
+    const listItems = html.querySelectorAll(".participant-item");
+
+    listItems.forEach(li => {
+      li.addEventListener("dragstart", this._onDragStart.bind(this));
+      li.addEventListener("dragover", this._onDragOver.bind(this));
+      li.addEventListener("drop", this._onDrop.bind(this));
+    });
+  }
+
+  _onDragStart(event) {
+    event.dataTransfer.setData("text/plain", event.currentTarget.dataset.id);
+  }
+
+  _onDragOver(event) {
+    event.preventDefault();
+  }
+
+  async _onDrop(event) {
+    event.preventDefault();
+    const draggedId = event.dataTransfer.getData("text/plain");
+    const targetId = event.currentTarget.dataset.id;
+
+    if (draggedId === targetId) return;
+
+    const draggedIndex = this._participants.findIndex(p => p.id === draggedId);
+    const targetIndex = this._participants.findIndex(p => p.id === targetId);
+
+    if (draggedIndex < 0 || targetIndex < 0) return;
+
+    // Identify the currently active participant before we shuffle
+    const activeParticipantId = this._participants[this._activeIndex].id;
+
+    // Move the item
+    const [draggedItem] = this._participants.splice(draggedIndex, 1);
+    this._participants.splice(targetIndex, 0, draggedItem);
+
+    // Find the new index of the collected active participant
+    const newActiveIndex = this._participants.findIndex(p => p.id === activeParticipantId);
+    this._activeIndex = newActiveIndex;
+
+    await this._saveState();
+    this.render();
+  }
+
   _generateGMParticipant() {
     return {
       id: "gm-participant",
-      name: "Game Master",
-      img: "icons/svg/mystery-man.svg",
-      isGM: true,
-      actorId: null
+      name: "Gamemaster",
+      img: "icons/svg/d20-grey.svg",
+      actorId: null,
+      isGM: true
     };
   }
 
@@ -119,8 +165,6 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
       movementLocked: this._movementLocked
     });
   }
-
-  // --- Actions ---
 
   async _onNextTurn(event, target) {
     if (!game.user.isGM) return;
@@ -165,7 +209,7 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
       this._participants[index] = this._participants[index + 1];
       this._participants[index + 1] = temp;
 
-      // Adjust active index if it moved
+      // Adjust active index
       if (this._activeIndex === index) this._activeIndex++;
       else if (this._activeIndex === index + 1) this._activeIndex--;
 
@@ -175,6 +219,7 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _onRefresh(event, target) {
+    if (!game.user.isGM) return;
     this.render();
   }
 
@@ -186,123 +231,141 @@ export class CrawlTracker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 }
 
-/**
- * Initialize Module
- */
+// Register settings
 Hooks.once("init", () => {
-  console.log("Shadowdark Crawl Tracker | Initializing Version 1.1.0");
+  console.log("Shadowdark Crawl Tracker | Initializing Version 1.2.0");
+
   game.settings.register("shadowdark-crawl-tracker", "trackerState", {
     name: "Tracker State",
     scope: "world",
     config: false,
     type: Object,
-    default: { participants: [], activeIndex: 0, movementLocked: false }
+    default: {}
   });
 
+  const api = new CrawlTracker();
   game.modules.get("shadowdark-crawl-tracker").api = {
-    tracker: new CrawlTracker()
+    tracker: api
   };
 });
 
-Hooks.on("preUpdateToken", (document, change, options, userId) => {
-  // 1. GM always bypasses
+// Movement Lock Hook
+// Prevent movement if it's not the user's turn
+Hooks.on("preUpdateToken", (doc, changes, options, userId) => {
+  // If no movement change, ignore
+  if (!changes.x && !changes.y) return true;
+
+  // GM can always move
   if (game.user.isGM) return true;
 
-  // 2. Read state directly from settings (Source of Truth) to avoid stale client state
-  console.log("Shadowdark Crawl Tracker | Checking lock state from settings");
   const state = game.settings.get("shadowdark-crawl-tracker", "trackerState");
   if (!state || !state.movementLocked) return true;
 
-  // 3. Check if the change involves position (x or y)
-  const isMoving = (change.x !== undefined && change.x !== document.x) || (change.y !== undefined && change.y !== document.y);
-  if (!isMoving) return true;
+  const participants = state.participants || [];
+  const activeIndex = state.activeIndex || 0;
+  const activeParticipant = participants[activeIndex];
 
-  // 4. Check if the token belongs to the active participant
-  const participants = state.participants;
-  const activeIndex = state.activeIndex;
+  if (!activeParticipant) return true;
 
-  if (participants && participants[activeIndex]) {
-    const activeParticipant = participants[activeIndex];
+  // The active participant's actor ID
+  const allowedActorId = activeParticipant.actorId;
 
-    // If the token matches the active participant's actor ID, ALLOW movement
-    if (activeParticipant && activeParticipant.actorId === document.actorId) {
-      return true; // IT IS YOUR TURN
-    }
+  // The actor associated with the moving token
+  const tokenActorId = doc.actor.id;
+
+  if (activeParticipant.isGM) {
+    // If it's GM's turn, players cannot move
+    ui.notifications.warn("It is the GM's turn!");
+    return false;
   }
 
-  ui.notifications.warn("Crawl Initiative: Movement is waiting for your turn.");
-  return false; // Prevent the update for everyone else
+  if (allowedActorId !== tokenActorId) {
+    ui.notifications.warn(`It is ${activeParticipant.name}'s turn!`);
+    return false;
+  }
+
+  return true;
 });
 
-Hooks.on("updateSetting", (setting, change, options, userId) => {
+// Auto-update participants if actors change (name/img)
+Hooks.on("updateSetting", (setting) => {
   if (setting.key === "shadowdark-crawl-tracker.trackerState") {
     const api = game.modules.get("shadowdark-crawl-tracker").api;
-    if (api && api.tracker) {
-      // Reload the new state into the class instance
-      api.tracker._loadState().then(() => {
-        api.tracker.render();
-      });
+    if (api && api.tracker && api.tracker.rendered) {
+      api.tracker.render();
     }
   }
 });
 
-Hooks.on("updateActor", (actor, changes, options, userId) => {
+Hooks.on("updateActor", async (actor, changes, options, userId) => {
+  if (!game.user.isGM) return;
   // Only care if name or img changed
   if (!changes.name && !changes.img) return;
 
-  const api = game.modules.get("shadowdark-crawl-tracker").api;
-  if (api && api.tracker) {
-    const tracker = api.tracker;
-    const participant = tracker._participants.find(p => p.actorId === actor.id);
-    if (participant) {
-      if (changes.name) participant.name = changes.name;
-      if (changes.img) participant.img = changes.img;
-      tracker.render();
-      // We should probably save state here too if we want it to persist immediately, 
-      // though usually save happens on turn change. Let's save to be safe.
-      if (game.user.isGM) tracker._saveState();
+  const state = game.settings.get("shadowdark-crawl-tracker", "trackerState");
+  const participants = state.participants || [];
+  let changed = false;
+
+  // Check if this actor is in our list
+  for (const p of participants) {
+    if (p.actorId === actor.id) {
+      if (changes.name) p.name = changes.name;
+      if (changes.img) p.img = changes.img;
+      changed = true;
     }
+  }
+
+  if (changed) {
+    await game.settings.set("shadowdark-crawl-tracker", "trackerState", state);
+    const api = game.modules.get("shadowdark-crawl-tracker").api;
+    if (api && api.tracker) api.tracker.render();
   }
 });
 
-Hooks.on("getSceneControlButtons", (controls) => {
+Hooks.on("renderSceneControls", (app, html, data) => {
   if (!game.user.isGM) return;
 
-  // Add a new primary category for Crawl Tracking
-  const crawlControl = {
-    name: "shadowdark-crawl",
-    title: "Crawl Tracking",
-    layer: "tokens",
-    icon: "fa-solid fa-shoe-prints",
-    visible: true,
-    tools: {
-      "toggle-tracker": {
-        name: "toggle-tracker",
-        title: "Toggle Crawl Tracker",
-        icon: "fa-solid fa-shoe-prints",
-        onClick: () => {
-          console.log("Shadowdark Crawl Tracker | Toggle Button Clicked");
-          try {
-            const api = game.modules.get("shadowdark-crawl-tracker").api;
-            if (!api || !api.tracker) {
-              console.error("Shadowdark Crawl Tracker | API or Tracker not found!");
-              return;
-            }
-            if (api.tracker.rendered) {
-              api.tracker.close();
-            } else {
-              api.tracker.render({ force: true });
-            }
-          } catch (err) {
-            console.error("Shadowdark Crawl Tracker | Error rendering tracker:", err);
-          }
-        },
-        button: true
-      }
-    },
-    activeTool: "toggle-tracker"
-  };
+  // Ensure html is a jQuery object
+  const jqHtml = $(html);
 
-  // In V13, controls is a Record<string, SceneControl>
-  controls["shadowdark-crawl"] = crawlControl;
+  // Fix deprecation warnings & get active state safely
+  // V13+ uses app.control.name/app.tool.name
+  const activeControlName = app.control?.name || app.activeControl;
+
+  // We want to add the button when the Token controls are active
+  if (activeControlName === "token" || activeControlName === "tokens") {
+    // In V13, the tools menu has the ID 'scene-controls-tools'
+    const toolsMenu = jqHtml.find("#scene-controls-tools");
+
+    // Fallback logic
+    const targetContainer = toolsMenu.length ? toolsMenu : jqHtml.find(".sub-controls.active");
+
+    if (targetContainer.length) {
+      if (targetContainer.find('.control-tool[data-tool="toggle-tracker"]').length > 0) return;
+
+      const title = "Toggle Crawl Tracker";
+      const icon = "fa-solid fa-shoe-prints";
+
+      const btn = $(`
+        <li class="control-tool" data-tool="toggle-tracker" aria-label="${title}">
+          <button type="button" class="control ui-control tool icon ${icon}" data-tool="toggle-tracker" aria-label="${title}"></button>
+        </li>
+      `);
+
+      btn.on("click", (event) => {
+        event.preventDefault();
+        try {
+          const api = game.modules.get("shadowdark-crawl-tracker").api;
+          if (api?.tracker) {
+            if (api.tracker.rendered) api.tracker.close();
+            else api.tracker.render({ force: true });
+          }
+        } catch (err) {
+          console.error("Shadowdark Crawl Tracker | Error rendering tracker:", err);
+        }
+      });
+
+      targetContainer.append(btn);
+    }
+  }
 });
