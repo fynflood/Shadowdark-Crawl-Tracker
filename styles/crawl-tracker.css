@@ -39,14 +39,14 @@
  * 3. The form matches the content height and creates the
  *    main vertical layout flow.
  */
-form {
+.shadowdark-crawl-app form {
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-.participant-list {
+.shadowdark-crawl-app .participant-list {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -57,7 +57,7 @@ form {
     /* Important for flex scrolling */
 }
 
-.participant-item {
+.shadowdark-crawl-app .participant-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -69,36 +69,36 @@ form {
     transition: all 0.2s ease;
 }
 
-.participant-item.active {
+.shadowdark-crawl-app .participant-item.active {
     background: #3a1a1a;
     border-color: #ff3333;
     box-shadow: 0 0 5px #ff3333;
 }
 
-.participant-info {
+.shadowdark-crawl-app .participant-info {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.participant-info img {
+.shadowdark-crawl-app .participant-info img {
     width: 32px;
     height: 32px;
     border-radius: 50%;
     border: 1px solid #888;
 }
 
-.participant-info .name {
+.shadowdark-crawl-app .participant-info .name {
     font-weight: bold;
     font-size: 1.1em;
 }
 
-.participant-item .controls {
+.shadowdark-crawl-app .participant-item .controls {
     display: flex;
     gap: 2px;
 }
 
-.participant-item .controls button {
+.shadowdark-crawl-app .participant-item .controls button {
     background: transparent;
     border: none;
     color: #888;
@@ -107,18 +107,18 @@ form {
     font-size: 0.8em;
 }
 
-.participant-item .controls button:hover {
+.shadowdark-crawl-app .participant-item .controls button:hover {
     color: #fff;
 }
 
-.tracker-footer {
+.shadowdark-crawl-app .tracker-footer {
     display: flex;
     gap: 5px;
     border-top: 1px solid #444;
     padding-top: 10px;
 }
 
-.tracker-footer button {
+.shadowdark-crawl-app .tracker-footer button {
     flex: 1;
     background: #333;
     color: #fff;
@@ -131,30 +131,30 @@ form {
     gap: 5px;
 }
 
-.tracker-footer button:hover {
+.shadowdark-crawl-app .tracker-footer button:hover {
     background: #444;
     border-color: #777;
 }
 
-.tracker-footer button[data-action="nextTurn"] {
+.shadowdark-crawl-app .tracker-footer button[data-action="nextTurn"] {
     background: #2a4a2a;
     border-color: #4a8a4a;
     flex: 2;
 }
 
-.tracker-footer button[data-action="nextTurn"]:hover {
+.shadowdark-crawl-app .tracker-footer button[data-action="nextTurn"]:hover {
     background: #3a6a3a;
 }
 
-.tracker-footer button[data-action="toggleLock"] {
+.shadowdark-crawl-app .tracker-footer button[data-action="toggleLock"] {
     flex: 0.5;
 }
 
-.tracker-footer button[data-action="toggleLock"].locked {
+.shadowdark-crawl-app .tracker-footer button[data-action="toggleLock"].locked {
     color: #ff3333;
     border-color: #ff3333;
 }
 
-.tracker-footer button[data-action="toggleLock"].unlocked {
+.shadowdark-crawl-app .tracker-footer button[data-action="toggleLock"].unlocked {
     color: #00ff00;
 }
