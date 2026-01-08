@@ -31,7 +31,8 @@ class CrawlTracker extends foundry.applications.api.HandlebarsApplicationMixin(f
       moveUp: CrawlTracker.prototype._onMoveUp,
       moveDown: CrawlTracker.prototype._onMoveDown,
       refresh: CrawlTracker.prototype._onRefresh,
-      toggleLock: CrawlTracker.prototype._onToggleLock
+      toggleLock: CrawlTracker.prototype._onToggleLock,
+      toggleCombatLock: CrawlTracker.prototype._onToggleCombatLock
     }
   };
 
@@ -81,8 +82,10 @@ class CrawlTracker extends foundry.applications.api.HandlebarsApplicationMixin(f
     return {
       participants: this._participants,
       activeIndex: this._activeIndex,
+      activeIndex: this._activeIndex,
       isGM: game.user.isGM,
-      movementLocked: this._movementLocked
+      movementLocked: this._movementLocked,
+      combatMovementLock: game.settings.get("shadowdark-crawl-tracker", "combatMovementLock")
     };
   }
 
@@ -227,6 +230,14 @@ class CrawlTracker extends foundry.applications.api.HandlebarsApplicationMixin(f
     if (!game.user.isGM) return;
     this._movementLocked = !this._movementLocked;
     await this._saveState();
+    await this._saveState();
+    this.render();
+  }
+
+  async _onToggleCombatLock(event, target) {
+    if (!game.user.isGM) return;
+    const newState = !game.settings.get("shadowdark-crawl-tracker", "combatMovementLock");
+    await game.settings.set("shadowdark-crawl-tracker", "combatMovementLock", newState);
     this.render();
   }
 }
@@ -241,6 +252,14 @@ Hooks.once("init", () => {
     config: false,
     type: Object,
     default: {}
+  });
+
+  game.settings.register("shadowdark-crawl-tracker", "combatMovementLock", {
+    name: "Combat Movement Lock",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
   });
 
   const api = new CrawlTracker();
@@ -258,6 +277,24 @@ Hooks.on("preUpdateToken", (doc, changes, options, userId) => {
   // GM can always move
   if (game.user.isGM) return true;
 
+  // --- COMBAT MOVEMENT LOCK ---
+  if (game.combat?.active) {
+    const combatLock = game.settings.get("shadowdark-crawl-tracker", "combatMovementLock");
+    if (combatLock) {
+      const currentCombatant = game.combat.combatant;
+      // If no combatant is active, maybe lock everyone? Or allow?
+      // Usually there is always a current combatant if active.
+      if (currentCombatant && currentCombatant.actorId !== doc.actor.id) {
+        ui.notifications.warn(`It is ${currentCombatant.name}'s turn!`);
+        return false;
+      }
+    }
+    // If we are in combat, IGNORE the Crawl Tracker lock completely.
+    return true;
+  }
+
+  // --- CRAWL TRACKER LOCK ---
+  // Only applies if NOT in combat (handled above)
   const state = game.settings.get("shadowdark-crawl-tracker", "trackerState");
   if (!state || !state.movementLocked) return true;
 

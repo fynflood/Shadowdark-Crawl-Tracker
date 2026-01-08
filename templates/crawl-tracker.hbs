@@ -1,7 +1,8 @@
 <div class="crawl-tracker-container">
     <div class="participant-list">
         {{#each participants}}
-        <div class="participant-item {{#if (eq @index ../activeIndex)}}active{{/if}}" data-id="{{this.id}}" {{#if ../isGM}}draggable="true"{{/if}}>
+        <div class="participant-item {{#if (eq @index ../activeIndex)}}active{{/if}}" data-id="{{this.id}}" {{#if
+            ../isGM}}draggable="true" {{/if}}>
             <div class="participant-info">
                 <img src="{{this.img}}" title="{{this.name}}" />
                 <span class="name">{{this.name}}</span>
@@ -26,6 +27,11 @@
         <button type="button" data-action="toggleLock" class="{{#if movementLocked}}locked{{else}}unlocked{{/if}}"
             title="Toggle Movement Lock (Red = Locked)">
             <i class="fa-solid {{#if movementLocked}}fa-lock{{else}}fa-lock-open{{/if}}"></i>
+        </button>
+        <button type="button" data-action="toggleCombatLock" class="{{#if combatMovementLock}}locked{{/if}}"
+            title="Toggle Combat Movement Lock (Red = Locked)"
+            style="{{#if combatMovementLock}}color: #ff3333; border-color: #ff3333;{{/if}}">
+            <i class="fa-solid fa-swords"></i>
         </button>
         <button type="button" data-action="nextTurn">
             <i class="fa-solid fa-arrow-right"></i> Next Turn
